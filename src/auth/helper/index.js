@@ -3,7 +3,6 @@ import { API } from '../../backend';
 export const signup = (user) => {
 	return fetch(`${API}/createaccount`, {
 		method: 'POST',
-
 		headers: {
 			Accept: 'application/json',
 			'Content-Type': 'application/json'
@@ -24,7 +23,7 @@ export const signin = (user) => {
 		},
 		body: JSON.stringify(user)
 	})
-		.then((response) => response.jons())
+		.then((response) => response.json())
 		.catch((error) => console.log(error));
 };
 
@@ -55,7 +54,7 @@ export const isAuthenticated = () => {
 	}
 
 	if (localStorage.getItem('jwt')) {
-		return JSON.parse(localStorage.getItem('jwt'))
+		return JSON.parse(localStorage.getItem('jwt'));
 	} else {
 		return false;
 	}

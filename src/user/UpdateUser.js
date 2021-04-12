@@ -1,9 +1,10 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { Redirect } from 'react-router';
 import { Link } from 'react-router-dom';
-import { isAuthenticated, signup } from '../auth/helper/index';
+import { isAuthenticated, signout } from '../auth/helper/index';
+import { getUser, updateuser } from './coreapicalls/apicalls';
 
-function Signup() {
+function UpdateUser({ match, history }) {
 	const [ values, setValues ] = useState({
 		firstname: '',
 		lastname: '',
@@ -14,40 +15,52 @@ function Signup() {
 		success: false
 	});
 
+	const { token } = isAuthenticated();
+
 	const { firstname, lastname, email, gender, password, error, success } = values;
 
 	const handleChange = (name) => (event) => {
 		setValues({ ...values, [name]: event.target.value });
 	};
 
+	const preload = (userid, token) => {
+		getUser(userid, token)
+			.then((data) => {
+				setValues({
+					...values,
+					firstname: data.firstname,
+					lastname: data.lastname,
+					email: data.email,
+					gender: data.gender,
+					password: '',
+					success: false
+				});
+
+				console.log(data);
+			})
+			.catch((error) => console.log(error));
+	};
+
+	useEffect(() => {
+		preload(match.params.userid, token);
+	}, []);
+
 	const onSubmit = (event) => {
 		event.preventDefault();
 
-		signup({ firstname, lastname, email, gender, password })
+		updateuser({ firstname, lastname, email, gender, password }, match.params.userid, token)
 			.then((data) => {
 				if (data.error) {
 					setValues({ ...values, error: data.error });
 					console.log(data.error);
 				} else {
-					setValues({
-						...values,
-						firstname: '',
-						lastname: '',
-						email: '',
-						gender: '',
-						password: '',
-						success: true
-					});
+					history.push('/user/dashboard');
 				}
 			})
 			.catch((error) => console.log('Error in signup', error));
 	};
 
-	if (isAuthenticated()) {
-		return <Redirect to="/user/dashboard" />;
-	}
-
-	const signupform = () => {
+	const updateform = () => {
 		return (
 			<Fragment>
 				<div className="form">
@@ -78,7 +91,7 @@ function Signup() {
 						</div>
 						<div className="mb-3">
 							<label htmlFor="email" className="form-label text-white">
-								Email address
+								Email address {gender}
 							</label>
 							<input
 								type="email"
@@ -96,6 +109,7 @@ function Signup() {
 										type="radio"
 										name="gender"
 										value="male"
+										checked={gender == 'male' ? true : ''}
 										onChange={handleChange('gender')}
 										id="male"
 									/>
@@ -111,6 +125,7 @@ function Signup() {
 										type="radio"
 										name="gender"
 										value="female"
+										checked={gender == 'female' ? true : ''}
 										onChange={handleChange('gender')}
 										id="female"
 									/>
@@ -132,12 +147,13 @@ function Signup() {
 								id="password"
 							/>
 						</div>
-						<Link to="/signin" className="text-secondary text-decoration-none d-block mb-4">
-							Already have an account?
-						</Link>
 						<button type="submit" className="btn btn-primary">
-							Sign up
+							Update
 						</button>
+
+						<Link to="/user/dashboard" className="text-secondary text-decoration-none d-block mt-3">
+							Back to dashboard
+						</Link>
 					</form>
 				</div>
 				{/* <p className="text-white text-center mt-4">{JSON.stringify(values)}</p> */}
@@ -157,11 +173,11 @@ function Signup() {
 
 	return (
 		<div>
-			{signupform()}
+			{updateform()}
 			{errormessage()}
 			{succesmessage()}
 		</div>
 	);
 }
 
-export default Signup;
+export default UpdateUser;
